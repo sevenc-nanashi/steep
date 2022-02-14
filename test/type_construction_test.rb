@@ -7876,4 +7876,48 @@ EachNoParam.new.each(*a)
       end
     end
   end
+
+  def test_generic_alias
+    with_checker(<<-RBS) do |checker|
+type list[out A] = [A, list[A]] | nil
+
+class A
+  def car: [X] (list[X]) -> X?
+
+  def cdr: [X] (list[X]) -> list[X]?
+end
+    RBS
+
+      source = parse_ruby(<<-'RUBY')
+class A
+  def car(list)
+    if list
+      list[0]
+    end
+  end
+
+  def cdr(list)
+    if list
+      list[1]
+    end
+  end
+end 
+
+# @type var a: list[Integer]
+a = [1, [2, [3, nil]]]
+
+car = A.new.car(a)
+cdr = A.new.cdr(a)
+      RUBY
+
+      with_standard_construction(checker, source) do |construction, typing|
+        type, _, context = construction.synthesize(source.node)
+
+        assert_no_error(typing)
+
+        assert_equal parse_type("::Integer?"), context.lvar_env[:car]
+        assert_equal parse_type("::list[::Integer]?"), context.lvar_env[:cdr]
+      end
+    end
+  end
 end

@@ -4,3 +4,13 @@ class Conference
 
   def initialize: (title: String, year: Integer) -> void
 end
+
+# type hook[T] = ^(String) -> void
+#
+type list[A] = String
+
+# class Foo
+#   def run: () -> void
+# end
+
+
